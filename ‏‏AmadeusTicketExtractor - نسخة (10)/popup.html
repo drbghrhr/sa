@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amadeus Ticket Extractor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      direction: rtl;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #ffffff;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .header {
+      text-align: center;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 0;
+      font-size: 28px;
+      color: white;
+    }
+
+    .search-section {
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    .search-section h3 {
+      color: #000;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: none; /* Hidden to move text to placeholder */
+    }
+
+    .phone-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #4caf50;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #000;
+      font-size: 16px;
+      direction: ltr;
+      text-align: left;
+      transition: all 0.3s ease;
+    }
+
+    .phone-input::placeholder {
+      color: #666;
+      direction: rtl;
+      text-align: right;
+    }
+
+    .phone-input:focus {
+      outline: none;
+      border-color: #4caf50;
+      background: #ffffff;
+    }
+
+    /* صف الإدخال + الأزرار */
+    .input-actions-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .input-actions-row .phone-input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .input-actions-row .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      padding: 12px 16px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary {
+      background: #2196F3;
+      color: white;
+      border: 1px solid #1976D2;
+    }
+
+    .btn-primary:hover {
+      background: #1976D2;
+    }
+
+    .btn-primary:active {
+      background: #1565C0;
+    }
+
+    .btn-success {
+      background: #4CAF50;
+      color: white;
+      border: 1px solid #388E3C;
+    }
+
+    .btn-success:hover {
+      background: #388E3C;
+    }
+
+    .btn-success:active {
+      background: #2E7D32;
+    }
+
+    .btn-danger {
+      background: #e53935 !important;
+      color: white !important;
+      border: 1px solid #c62828 !important;
+    }
+
+    .btn-danger:hover {
+      background: #c62828 !important;
+      color: white !important;
+    }
+
+    .btn-danger:active {
+      background: #AD1457 !important;
+      color: white !important;
+    }
+
+    /* Specific styling for delete buttons in tables */
+    .btn.btn-danger, button.btn-danger, input.btn-danger {
+      background: #e53935 !important;
+      color: white !important;
+      border: 1px solid #c62828 !important;
+    }
+
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+      margin: 0 0 15px 0;
+    }
+
+    .status-message {
+      min-height: 30px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      border: 1px solid #4caf50;
+      background: #f5f5f5;
+      color: #000;
+    }
+
+    .results-tabs {
+      display: none; /* Hidden but functionality preserved */
+      border-bottom: 1px solid #4caf50;
+      margin-bottom: 20px;
+      gap: 5px;
+      padding: 5px;
+    }
+
+    .result-tab {
+      flex: 1;
+      padding: 12px 20px;
+      border: 1px solid #4caf50;
+      background: transparent;
+      color: #333;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .result-tab.active {
+      background: #f5f5f5;
+      color: #000;
+      border: 1px solid #4caf50;
+      border-bottom: 2px solid #4caf50;
+    }
+
+    .result-tab:hover:not(.active) {
+      background: #f0f0f0;
+      color: #000;
+      border: 1px solid #4caf50;
+    }
+
+    .main-content {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .result-content {
+      display: none !important; /* Hidden but functionality preserved */
+      padding: 20px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #4caf50;
+    }
+
+    .result-content.active {
+      display: none !important; /* Keep hidden even when active */
+    }
+
+    .raw-text-display {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      padding: 15px;
+      border: 1px solid #4caf50;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #000;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      direction: ltr;
+      text-align: left;
+      resize: vertical;
+      flex: 1;
+    }
+
+    .raw-text-display::placeholder {
+      color: #81c784;
+      direction: rtl;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      border-radius: 6px;
+      padding: 10px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .raw-text-display:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    
+    
+    
+    
+    
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .btn-small:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-small:active {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    
+    .results-container {
+      padding: 20px;
+      margin-bottom: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #4caf50;
+    }
+
+    .summary-box {
+      background: transparent;
+      border: 1px solid #4caf50;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .summary-box h4 {
+      color: #000;
+      font-size: 16px;
+      margin-bottom: 15px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .summary-item {
+      color: #000;
+      font-size: 14px;
+      padding: 8px 0;
+      margin-bottom: 4px;
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid #4caf50;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      border: 1px solid #4caf50;
+    }
+
+    th {
+      background: #4caf50;
+      color: white;
+      padding: 12px 8px;
+      text-align: center;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border: 1px solid #388E3C;
+    }
+
+    td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #4caf50;
+      color: #000;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    tr:hover {
+      background: #f0f0f0;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-size: 16px;
+      font-style: italic;
+    }
+
+    .version {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 11px;
+      color: #000;
+      padding: 8px 12px;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4caf50;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #388E3C;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <div class="search-section">
+      <h3>📱 جلب التذاكر والقسائم برقم الجوال</h3>
+
+      <div class="input-group">
+        <label for="phoneInput">رقم الجوال:</label>
+        <div class="input-actions-row">
+          <input
+            type="tel"
+            id="phoneInput"
+            placeholder="رقم الجوال: أدخل رقم الجوال (مثل: 966501234567)"
+            class="phone-input"
+            maxlength="15"
+          >
+          <button id="getTicketsBtn" class="btn btn-primary">جلب التذاكر</button>
+          <button id="getEMDsBtn" class="btn btn-success">جلب القسائم</button>
+        </div>
+      </div>
+
+      <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <div class="results-container" id="resultsContainer">
+      <div class="no-results">قم بالبحث لعرض النتائج</div>
+    </div>
+
+    <!-- Toggle button for showing/hiding detailed results - Hidden as requested -->
+    <div class="toggle-results-section" style="display: none; text-align: center; margin: 10px 0;">
+      <button id="toggleResultsBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;">
+        👁️ عرض التفاصيل
+      </button>
+    </div>
+
+    <div class="results-tabs" id="resultsTabs">
+      <button id="rawResultTab" class="result-tab active">
+        📄 النص الخام
+      </button>
+      <button id="analyzedResultTab" class="result-tab">
+        📊 النتائج المحللة
+      </button>
+    </div>
+
+    <div id="rawResultContent" class="result-content active">
+      <textarea
+        id="rawTextDisplay"
+        class="raw-text-display"
+        placeholder="النتائج ستظهر هنا..."
+        readonly
+      ></textarea>
+    </div>
+
+    <div id="analyzedResultContent" class="result-content">
+    </div>
+
+    <div class="version" style="display: none;">الإصدار 5.0.0 - مع جلب تلقائي للقسائم</div>
+  </div>
+
+  <script src="popup.js"></script>
+  <script>
+    // Toggle functionality for detailed results
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleBtn = document.getElementById('toggleResultsBtn');
+      const resultsTabs = document.getElementById('resultsTabs');
+      const rawContent = document.getElementById('rawResultContent');
+      const analyzedContent = document.getElementById('analyzedResultContent');
+      let detailsVisible = false;
+
+      toggleBtn.addEventListener('click', function() {
+        detailsVisible = !detailsVisible;
+
+        if (detailsVisible) {
+          // Show detailed results
+          resultsTabs.style.display = 'flex';
+          rawContent.style.display = 'flex';
+          analyzedContent.style.display = 'none'; // Keep analyzed hidden by default
+          toggleBtn.innerHTML = '🙈 إخفاء التفاصيل';
+          toggleBtn.className = 'btn btn-danger';
+        } else {
+          // Hide detailed results
+          resultsTabs.style.display = 'none';
+          rawContent.style.display = 'none';
+          analyzedContent.style.display = 'none';
+          toggleBtn.innerHTML = '👁️ عرض التفاصيل';
+          toggleBtn.className = 'btn btn-primary';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
